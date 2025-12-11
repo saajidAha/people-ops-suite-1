@@ -19,10 +19,12 @@ import leave_service.employee;
 import ballerina/http;
 import ballerina/log;
 
+// import ballerina/mime;
+
 configurable boolean isDebug = false;
 configurable boolean emailNotificationsEnabled = false;
 configurable string[] debugRecipients = ?;
-configurable EmailAlertConfig emailAlertConfig = ?;
+configurable EmailServiceConfig emailServiceConfig = ?;
 configurable string additionalCommentTemplate = ?;
 final string appName = isDebug ? APP_NAME_DEV : APP_NAME;
 
@@ -32,10 +34,8 @@ final string appName = isDebug ? APP_NAME_DEV : APP_NAME;
 # + subject - Email subject
 # + body - Email body
 # + recipients - Email recipients
-# + templateId - Email template ID
 # + return - Error if sending the email fails
-isolated function processEmailNotification(string alertHeader, string subject, map<string> body, string[] recipients,
-        string templateId = emailAlertConfig.templateId) returns error? {
+isolated function processEmailNotification(string alertHeader, string subject, map<string> body, string[] recipients) returns error? {
 
     if !emailNotificationsEnabled {
         log:printInfo("Email notifications are disabled. Skipping the email alert.");
@@ -43,18 +43,30 @@ isolated function processEmailNotification(string alertHeader, string subject, m
     }
 
     string[] to = isDebug ? debugRecipients : getValidEmailRecipientsFromList(recipients);
+
+    // Build HTML email content
+    string htmlContent = string `
+        <html>
+            <body>
+                <h2>${alertHeader}</h2>
+                <p>${body.get("CONTENT")}</p>
+            </body>
+        </html>
+    `;
+
+    // Base64 encode the HTML content
+    string encodedTemplate = htmlContent.toBytes().toBase64();
+
     json payload = {
-        appUuid: emailAlertConfig.uuid,
-        templateId: templateId,
-        frm: emailAlertConfig.'from,
-        to,
-        subject,
-        contentKeyValPairs: body
+        template: encodedTemplate, // Send base64-encoded HTML
+        "from": emailServiceConfig.'emailFrom,
+        to: emailServiceConfig.emailTo,
+        subject
     };
 
     // Retries email sending 3 times
     retry transaction {
-        json|error alertResult = emailClient->/send\-smtp\-email.post(payload);
+        json|error alertResult = emailClient->/send\-email.post(payload);
         if alertResult is error {
             string errBody = alertResult is http:ApplicationResponseError ?
                 alertResult.detail().body.toString() : alertResult.message();
@@ -100,7 +112,7 @@ public isolated function sendAdditionalComment(EmailNotificationDetails details,
         ALERT_TYPE: ALERT_HEADER,
         CONTENT: details.body
     };
-    check processEmailNotification(ALERT_HEADER, details.subject, body, emailRecipients, additionalCommentTemplate);
+    check processEmailNotification(ALERT_HEADER, details.subject, body, emailRecipients);
 }
 
 # Generate the email content for a leave.
@@ -120,12 +132,14 @@ public isolated function generateContentForLeave(string token, string employeeEm
     string startDateString = getEmailDateStringFromTimestamp(leave.startDate);
     string? firstName = ();
     string? lastName = ();
-    readonly & Employee|error employee = employee:getEmployee(employeeEmail, token);
+    Employee|error? employee = employee:fetchEmployee(employeeEmail); // this is incorrect. cyclic dependency
     if employee is error {
         return employee;
     }
-    firstName = employee.firstName;
-    lastName = employee.lastName;
+    if employee is Employee {
+        firstName = employee.firstName;
+        lastName = employee.lastName;
+    }
     string employeeName = firstName is string ? string `${firstName} ${lastName ?: ""}` : employeeEmail;
     match leave.periodType {
         database:ONE_DAY_LEAVE => {

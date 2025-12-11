@@ -28,13 +28,13 @@ type ChoreoApp record {|
 
 # [Configurable] Email alerting service configuration record.
 #
-# + uuid - Authorized app UUID provided by the Email service
-# + from - Email sender
-# + templateId - ID of the email template
-public type EmailAlertConfig record {|
-    string uuid;
-    string 'from;
-    string templateId;
+# + baseUrl - Authorized app UUID provided by the Email service
+# + emailFrom - Email sender
+# + emailTo - Email recipients
+public type EmailServiceConfig record {|
+    string baseUrl;
+    string 'emailFrom;
+    string[] emailTo;
 |};
 
 # Email notification details record.
