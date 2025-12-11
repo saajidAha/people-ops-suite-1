@@ -219,3 +219,22 @@ public type ReportFilters record {|
     # Employee statuses
     EmployeeStatus[] employeeStatuses;
 |};
+
+# Description.
+#
+# + employeeId - field description  
+# + firstName - field description  
+# + lastName - field description  
+# + workEmail - field description  
+# + employeeThumbnail - field description  
+# + jobRole - field description  
+# + privileges - field description
+public type UserInfo record {|
+    string? employeeId = "LK00001";
+    string? firstName = "Saajid";
+    string? lastName = "Ahamed";
+    string? workEmail = "saajid@wso2.com";
+    string? employeeThumbnail = "abc";
+    string? jobRole = "Intern";
+    int[] privileges = [789, 987];
+|};

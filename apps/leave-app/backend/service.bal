@@ -26,13 +26,41 @@ import ballerina/time;
     label: "Leave Backend Service",
     id: "people-ops/leave-application"
 }
-service http:InterceptableService / on new http:Listener(9090) {
+
+service http:InterceptableService / on new http:Listener(9091) {
 
     # Request interceptor.
     # + return - authorization:JwtInterceptor
     public function createInterceptors() returns http:Interceptor[] => [new authorization:JwtInterceptor()];
 
     function init() returns error? => log:printInfo("Leave application backend service started.");
+
+    resource function get user\-info(http:RequestContext ctx) returns UserInfo|http:InternalServerError {
+        do {
+            readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
+            string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
+            employee:Employee empInfo = check employee:getEmployee(userInfo.email, jwt);
+
+            UserInfo userInfoResponse = {
+                employeeId: empInfo.employeeId,
+                firstName: empInfo.firstName,
+                lastName: empInfo.lastName,
+                workEmail: empInfo.workEmail,
+                employeeThumbnail: empInfo.employeeThumbnail,
+                jobRole: empInfo.employeeId,
+                privileges: [987, 789]
+            };
+            return userInfoResponse;
+        } on fail error internalErr {
+            string errMsg = "Error occurred while fetching user info";
+            log:printError(errMsg, internalErr);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+    }
 
     # Get leaves for the given filters.
     #
@@ -669,7 +697,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 );
             string[] emails = from Employee employee in employees
-                select employee.workEmail ?: "";
+                select employee.workEmail;
 
             if !isAdmin && emails.length() == 0 {
                 return <http:Forbidden>{
