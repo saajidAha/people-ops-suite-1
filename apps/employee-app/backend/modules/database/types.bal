@@ -80,7 +80,7 @@ public type EmployeeDb record {|
     string employeeId;
     # Employee work email
     @sql:Column {name: "employee_work_email"}
-    string workEmail;
+    string? workEmail;
     # Employee first name
     @sql:Column {name: "employee_first_name"}
     string? firstName;

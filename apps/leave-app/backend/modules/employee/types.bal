@@ -55,7 +55,7 @@ public type Employee record {|
     # Last name of the employee
     string? lastName;
     # Work email of the employee
-    string? workEmail;
+    string workEmail;
     # Start date of the employee
     string? startDate;
     # Thumbnail image of the employee

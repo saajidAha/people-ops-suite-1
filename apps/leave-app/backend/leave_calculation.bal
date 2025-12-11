@@ -404,7 +404,7 @@ isolated function getPolicyAdjustedLeaveCounts(readonly & Employee employee, str
     LeavePolicy leavePolicy = check getLegallyEntitledLeave(employee);
     float? entitledCasualLeave = leavePolicy?.casual;
     float? entitledAnnualLeave = leavePolicy?.annual;
-    string? email = employee.workEmail;
+    string email = employee.workEmail;
     if email is () {
         return {};
     }

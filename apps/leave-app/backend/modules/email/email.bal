@@ -132,7 +132,7 @@ public isolated function generateContentForLeave(string token, string employeeEm
     string startDateString = getEmailDateStringFromTimestamp(leave.startDate);
     string? firstName = ();
     string? lastName = ();
-    Employee|error? employee = employee:fetchEmployee(employeeEmail); // this is incorrect. cyclic dependency
+    Employee|error? employee = employee:getEmployee(employeeEmail, token); 
     if employee is error {
         return employee;
     }
