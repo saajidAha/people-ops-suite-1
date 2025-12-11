@@ -23,7 +23,7 @@ public isolated function toEmployee(EmployeeResponse response) returns readonly 
         employeeId: response.employeeId,
         firstName: response.firstName,
         lastName: response.lastName,
-        workEmail: response.workEmail,
+        workEmail: response.workEmail ?: "",
         startDate: response.startDate,
         employeeThumbnail: response.employeeThumbnail,
         location: response.location,
