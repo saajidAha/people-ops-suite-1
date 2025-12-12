@@ -47,7 +47,7 @@ service http:InterceptableService / on new http:Listener(9091) {
                 lastName: empInfo.lastName,
                 workEmail: empInfo.workEmail,
                 employeeThumbnail: empInfo.employeeThumbnail,
-                jobRole: empInfo.employeeId,
+                jobRole: empInfo.jobRole,
                 privileges: [987, 789]
             };
             return userInfoResponse;
@@ -483,6 +483,7 @@ service http:InterceptableService / on new http:Listener(9091) {
                     employeeThumbnail: employee.employeeThumbnail,
                     location: employee.location,
                     leadEmail: employee.leadEmail,
+                    jobRole: employee.jobRole,
                     startDate: employee.startDate,
                     finalDayOfEmployment: employee.finalDayOfEmployment,
                     lead: employee.lead
@@ -528,6 +529,7 @@ service http:InterceptableService / on new http:Listener(9091) {
                 employeeThumbnail: employee.employeeThumbnail,
                 location: employee.location,
                 leadEmail: employee.leadEmail,
+                jobRole: employee.jobRole,
                 startDate: employee.startDate,
                 finalDayOfEmployment: employee.finalDayOfEmployment,
                 lead: employee.lead
@@ -629,45 +631,6 @@ service http:InterceptableService / on new http:Listener(9091) {
                 }
             };
         }
-    }
-
-    # Fetch report filters required for the reports UI.
-    #
-    # + employeeStatuses - Employee statuses to filter the employees
-    # + return - Report filters
-    resource function get report\-filters(http:RequestContext ctx, string[]? employeeStatuses, string[]? businessUnits,
-            int[]? businessUnitIds) returns ReportFilters|http:BadRequest|http:InternalServerError {
-
-        do {
-            string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
-            employee:OrgStructure|error orgStructure = employee:getOrgStructure(
-                    {employeeStatuses, businessUnits, businessUnitIds}, jwt);
-            if orgStructure is error {
-                fail error("Error occurred while retrieving organization structure data!", orgStructure);
-            }
-
-            Employee[] & readonly employees = check employee:getEmployees(jwt, {status: employeeStatuses});
-            string[] countries = from Employee employee in employees
-                let string country = employee.location ?: ""
-                group by country
-                select country;
-
-            return {
-                countries,
-                orgStructure,
-                employeeStatuses: [EMP_STATUS_ACTIVE, EMP_STATUS_LEFT, EMP_STATUS_MARKED_LEAVER]
-            };
-
-        } on fail error internalErr {
-            string errMsg = "Error occurred while fetching report filters";
-            log:printError(errMsg, internalErr);
-            return <http:InternalServerError>{
-                body: {
-                    message: errMsg
-                }
-            };
-        }
-
     }
 
     # Generate and fetch leave reports for admins and leads.

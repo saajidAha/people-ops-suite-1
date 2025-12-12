@@ -47,6 +47,7 @@ public isolated function getEmployee(string email, string token)
                 startDate
                 employeeThumbnail
                 location
+                jobRole
                 managerEmail
                 finalDayOfEmployment
                 lead
@@ -102,6 +103,7 @@ public isolated function getEmployees(string token, EmployeeFilter filters = {},
                 startDate
                 employeeThumbnail
                 location
+                jobRole
                 managerEmail
                 finalDayOfEmployment
                 lead

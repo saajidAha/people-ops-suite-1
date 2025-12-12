@@ -110,6 +110,8 @@ public type Employee record {|
     string? employeeThumbnail;
     # Location of the employee
     string? location;
+    # Job role of the employee
+    string? jobRole;
     # Lead of the employee
     string? leadEmail;
     # Final day of employment of the employee
@@ -134,6 +136,8 @@ public type EmployeeResponse record {
     string? employeeThumbnail;
     # Location of the employee
     string? location;
+    # Job role of the employee
+    string? jobRole?;
     # Designation of the employee
     string? designation?;
     # Business unit name of the employee
