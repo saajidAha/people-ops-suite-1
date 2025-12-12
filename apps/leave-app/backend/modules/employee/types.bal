@@ -14,14 +14,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# [Configurable] Choreo OAuth2 application configuration.
-type ChoreoApp record {|
+# [Configurable] OAuth2 entity application configuration.
+type Oauth2Config record {|
     # OAuth2 token endpoint
     string tokenUrl;
     # OAuth2 client ID
     string clientId;
     # OAuth2 client secret
     string clientSecret;
+|};
+
+# Retry config for the graphql client.
+public type GraphQlRetryConfig record {|
+    # Retry count
+    int count = RETRY_COUNT;
+    # Retry interval
+    decimal interval = RETRY_INTERVAL;
+    # Retry backOff factor
+    float backOffFactor = RETRY_BACKOFF_FACTOR;
+    # Retry max interval
+    decimal maxWaitInterval = RETRY_MAX_INTERVAL;
 |};
 
 # Employee filter record.
@@ -44,6 +56,42 @@ public type EmployeeFilter record {|
     string[]? employmentType = ();
     # Employee is a lead or not
     boolean? lead = ();
+|};
+
+# GraphQL Employee filter record.
+type GraphQLEmployeeFilter record {|
+    # Employee location
+    string? location = ();
+    # Employee business unit
+    string? businessUnit = ();
+    # Employee team
+    string? team = ();
+    # Employee statuses
+    string[]? employeeStatus = ();
+    # Manager email
+    string? managerEmail = ();
+    # Employee employment type
+    string[]? employmentType = ();
+    # Employee is a lead or not
+    boolean? lead = ();
+|};
+
+# GraphQL single employee response.
+type SingleEmployeeResponse record {|
+    # Response data wrapper
+    record {|
+        # Employee data
+        EmployeeResponse employee;
+    |} data;
+|};
+
+# GraphQL multiple employees response.
+type MultipleEmployeesResponse record {|
+    # Response data wrapper
+    record {|
+        # Employees data array
+        EmployeeResponse[] employees;
+    |} data;
 |};
 
 # Employee type.
@@ -87,23 +135,25 @@ public type EmployeeResponse record {
     # Location of the employee
     string? location;
     # Designation of the employee
-    string? designation;
+    string? designation?;
     # Business unit name of the employee
-    string? businessUnit;
+    string? businessUnit?;
     # Team name of the employee
-    string? team;
+    string? team?;
     # Unit name of the employee
-    string? unit;
-    # Lead of the employee
-    string? leadEmail;
+    string? unit?;
+    # Lead of the employee (deprecated, use managerEmail)
+    string? leadEmail?;
+    # Manager email of the employee
+    string? managerEmail;
     # Final day of employment of the employee
     string? finalDayOfEmployment;
     # Status of the employee
-    string? employeeStatus;
+    string? employeeStatus?;
     # Employee is a lead or not
     boolean? lead;
     # Job band of the employee
-    int? jobBand;
+    int? jobBand?;
     # EPF of the employee
     string? employeeEpf?;
     # Title of the employee
