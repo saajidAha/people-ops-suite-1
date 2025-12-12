@@ -198,7 +198,7 @@ isolated function generateContentForHalfDayLeave(string employeeName, boolean is
                 Hi all,
                 <br />
                 Please note that ${employeeName} ${isPastLeave ? "was" : "will be"} on half-day ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave (${isMorningHalf ? "first" : "second"} half) on ${date}.
-            <p>
+            </p>
         `)
         :
         (string `
@@ -206,7 +206,7 @@ isolated function generateContentForHalfDayLeave(string employeeName, boolean is
                 Hi all,
                 <br />
                 Please note that ${employeeName} has cancelled the half-day ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave applied for ${date}.
-            <p>
+            </p>
         `);
 
     return {
@@ -235,7 +235,7 @@ isolated function generateContentForOneDayLeave(string employeeName, boolean isC
                 Hi all,
                 <br />
                 Please note that ${employeeName} ${isPastLeave ? "was" : "will be"} on ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave on ${date}.
-            <p>
+            </p>
         `)
         :
         (string `
@@ -243,7 +243,7 @@ isolated function generateContentForOneDayLeave(string employeeName, boolean isC
                 Hi all,
                 <br />
                 Please note that ${employeeName} has cancelled the ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave applied for ${date}.
-            <p>
+            </p>
         `);
     return {
         subject,
@@ -272,7 +272,7 @@ isolated function generateContentForMultipleDaysLeave(string employeeName, boole
                 Hi all,
                 <br />
                 Please note that ${employeeName} ${isPastLeave ? "was" : "will be"} on ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave from ${fromDate} to ${toDate}.
-            <p>
+            </p>
         `)
         :
         (string `
@@ -280,7 +280,7 @@ isolated function generateContentForMultipleDaysLeave(string employeeName, boole
                 Hi all,
                 <br />
                 Please note that ${employeeName} has cancelled the ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave applied from ${fromDate} to ${toDate}.
-            <p>
+            </p>
         `);
     return {
         subject,
@@ -299,7 +299,7 @@ public isolated function generateContentForAdditionalComment(string subject, str
     string body = string `
             <p>
                 Additional Comment: ${additionalComment}
-            <p>
+            </p>
         `;
     return {
         subject,
