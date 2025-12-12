@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import ballerina/cache;
-import ballerina/http;
+import ballerina/graphql;
 import ballerina/log;
 
 isolated cache:Cache hrisEmployeeCache = new (
@@ -22,10 +22,10 @@ isolated cache:Cache hrisEmployeeCache = new (
     'cleanupInterval = CACHE_CLEANUP_INTERVAL
 );
 
-# Get Employee from HRIS by email with caching or employee service.
+# Get Employee from HRIS by email with caching using GraphQL.
 #
 # + email - Employee email
-# + token - JWT token
+# + token - JWT token (not used in GraphQL OAuth2 flow)
 # + return - Return Employee entity or error
 public isolated function getEmployee(string email, string token)
     returns readonly & Employee|error {
@@ -37,15 +37,30 @@ public isolated function getEmployee(string email, string token)
         }
     }
 
-    http:Response employeeResponse = check employeeClient->/employees/[email].get({"x-jwt-assertion": token});
-    json|error employeeJsonResponse = employeeResponse.getJsonPayload();
-    if employeeJsonResponse is error {
-        return error("Error occurred while processing employee JSON payload!", employeeJsonResponse);
+    string document = string `
+        query getEmployee($email: String!) {
+            employee(email: $email) {
+                employeeId
+                firstName
+                lastName
+                workEmail
+                startDate
+                employeeThumbnail
+                location
+                managerEmail
+                finalDayOfEmployment
+                lead
+            }
+        }
+    `;
+
+    SingleEmployeeResponse|graphql:ClientError response = hrClient->execute(document, {email});
+    if response is graphql:ClientError {
+        return error(ERR_MSG_EMPLOYEE_RETRIEVAL_FAILED, response);
     }
-    final readonly & EmployeeResponse|error employee = employeeJsonResponse.cloneWithType();
-    if employee is error {
-        return error("Error occurred while processing employee JSON payload!", employee);
-    }
+
+    EmployeeResponse employeeResp = response.data.employee;
+    readonly & Employee employee = toEmployee(employeeResp);
 
     lock {
         cache:Error? cachingErr = hrisEmployeeCache.put(email, employee);
@@ -54,42 +69,60 @@ public isolated function getEmployee(string email, string token)
         }
     }
 
-    return toEmployee(employee);
+    return employee;
 }
 
-# Get Employees from HRIS by filters with employee service.
+# Get Employees from HRIS by filters using GraphQL.
 #
-# + token - JWT token
-# + filters - Array of Filter objects containing the filter criteria for the query
+# + token - JWT token (not used in GraphQL OAuth2 flow)
+# + filters - Filter object containing the filter criteria for the query
 # + 'limit - The maximum number of employees to return
 # + offset - The number of employees to skip before starting to collect the result set
 # + return - Return an array of Employee entity or error
 public isolated function getEmployees(string token, EmployeeFilter filters = {}, int 'limit = DEFAULT_LIMIT,
         int offset = DEFAULT_OFFSET) returns readonly & Employee[]|error {
 
-    http:Response employeesResponse = check employeeClient->/employees/search.post(
-        filters,
-        {"x-jwt-assertion": token.toString()},
-        'limit = 'limit,
-        offset = offset
-    );
-    json|error employeesJsonResponse = employeesResponse.getJsonPayload();
-    if employeesJsonResponse is error {
-        return error("Error occurred while processing employees JSON payload!", employeesJsonResponse);
-    }
-    final readonly & EmployeeResponse[]|error employees = employeesJsonResponse.fromJsonWithType();
-    if employees is error {
-        return error("Error occurred while converting employees from JSON!", employees);
+    GraphQLEmployeeFilter gqlFilter = {
+        location: filters.location,
+        businessUnit: filters.businessUnit,
+        team: filters.team,
+        employeeStatus: filters.status,
+        managerEmail: filters.leadEmail,
+        employmentType: filters.employmentType,
+        lead: filters.lead
+    };
+
+    string document = string `
+        query getEmployees($filter: EmployeeFilter!) {
+            employees(filter: $filter) {
+                employeeId
+                firstName
+                lastName
+                workEmail
+                startDate
+                employeeThumbnail
+                location
+                managerEmail
+                finalDayOfEmployment
+                lead
+            }
+        }
+    `;
+
+    MultipleEmployeesResponse|graphql:ClientError response = hrClient->execute(document, {filter: gqlFilter});
+
+    if response is graphql:ClientError {
+        return error(ERR_MSG_EMPLOYEES_RETRIEVAL_FAILED, response);
     }
 
-    return from EmployeeResponse empResp in employees
+    return from EmployeeResponse empResp in response.data.employees
         select toEmployee(empResp);
 }
 
-# Get the location of an employee based on their email address.
+# Get the location of an employee based on their email address using GraphQL.
 #
 # + email - Email address of the employee 
-# + token - JWT token
+# + token - JWT token (not used in GraphQL OAuth2 flow)
 # + return - The employee's location or an error
 public isolated function getEmployeeLocation(string email, string token) returns string|error {
 
@@ -105,22 +138,3 @@ public isolated function getEmployeeLocation(string email, string token) returns
     return location;
 }
 
-public isolated function getOrgStructure(orgStructureFilter filter, string token, int 'limit = DEFAULT_LIMIT,
-        int offset = DEFAULT_OFFSET) returns OrgStructure|error {
-
-    http:Response orgStructureResponse = check employeeClient->/org\-structure.post(
-        filter,
-        {"x-jwt-assertion": token.toString()},
-        'limit = 'limit,
-        offset = offset
-    );
-    json|error orgStructureJsonResponse = orgStructureResponse.getJsonPayload();
-    if orgStructureJsonResponse is error {
-        return error("Error occurred while processing organization structure JSON payload!", orgStructureJsonResponse);
-    }
-    final readonly & OrgStructure|error orgStructure = orgStructureJsonResponse.fromJsonWithType();
-    if orgStructure is error {
-        return error("Error occurred while converting organization structure from JSON", orgStructure);
-    }
-    return orgStructure;
-}
